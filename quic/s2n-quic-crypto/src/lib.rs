@@ -16,8 +16,6 @@ mod ctr;
 mod ghash;
 mod iv;
 
-#[cfg(not(target_os = "windows"))]
-use aws_lc_rs as ring;
 
 #[doc(hidden)]
 pub use ring::{

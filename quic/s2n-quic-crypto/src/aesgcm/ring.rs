@@ -12,7 +12,6 @@ impl aead::Aead for LessSafeKey {
     type Tag = [u8; TAG_LEN];
 
     #[inline]
-    #[cfg(target_os = "windows")]
     fn encrypt(
         &self,
         nonce: &[u8; NONCE_LEN],
@@ -34,29 +33,6 @@ impl aead::Aead for LessSafeKey {
         };
 
         buffer.write_slice(tag.as_ref());
-
-        Ok(())
-    }
-
-    // use the scatter API if we're using AWS-LC
-    #[inline]
-    #[cfg(not(target_os = "windows"))]
-    fn encrypt(
-        &self,
-        nonce: &[u8; NONCE_LEN],
-        aad: &[u8],
-        payload: &mut scatter::Buffer,
-    ) -> aead::Result {
-        let nonce = Nonce::assume_unique_for_key(*nonce);
-        let aad = Aad::from(aad);
-
-        let (buffer, extra) = payload.inner_mut();
-        let extra_in = extra.as_deref().unwrap_or(&[][..]);
-        let (in_out, extra_out_and_tag) = buffer.split_mut();
-        let extra_out_and_tag = &mut extra_out_and_tag[..extra_in.len() + TAG_LEN];
-
-        self.seal_in_place_scatter(nonce, aad, in_out, extra_in, extra_out_and_tag)
-            .map_err(|_| aead::Error::INTERNAL_ERROR)?;
 
         Ok(())
     }
